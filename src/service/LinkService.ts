@@ -23,6 +23,10 @@ export class LinkService {
         return await this.repository.getLinkById(id);
     }
 
+    async getLinkByShortCode(linkShort: string) {
+        return await this.repository.getLinkByShortCode(linkShort);
+    }
+
     async createLink(input: CreateLinkInput) {
         const { linkShort, ...data } = input;
         const shortCode = linkShort ?? generateShortCode();

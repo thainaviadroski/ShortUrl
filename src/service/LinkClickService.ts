@@ -1,4 +1,5 @@
 import UAParser from "ua-parser-js";
+import { lookupGeoByIp } from "@/lib/geo";
 import { LinkClickRepository } from "@/repository/LinkClickRepository";
 import { LinkRepository } from "@/repository/LinkRepository";
 
@@ -33,13 +34,15 @@ export class LinkClickService {
             ? new UAParser(input.userAgent).getResult()
             : { browser: undefined, os: undefined, device: undefined };
 
+        const geo = input.country && input.city ? null : lookupGeoByIp(input.ipAddress);
+
         return await this.repository.createClick({
             linkId: input.linkId,
             userAgent: input.userAgent ?? null,
             ipAddress: input.ipAddress ?? null,
             referer: input.referer ?? null,
-            country: input.country ?? null,
-            city: input.city ?? null,
+            country: input.country ?? geo?.country ?? null,
+            city: input.city ?? geo?.city ?? null,
             browser: browser?.name ?? null,
             os: os?.name ?? null,
             device: device?.type ?? "desktop",

@@ -3,14 +3,26 @@ import { auth } from "@/auth";
 
 const PUBLIC_PAGE_PATHS = new Set(["/", "/login"]);
 
+// Top-level route segments that are real app pages, not short-link codes.
+const RESERVED_TOP_LEVEL_PATHS = new Set(["login", "links", "analytics", "api-doc", "api"]);
+
 function isPublicClickTracking(pathname: string, method: string) {
   return method === "POST" && /^\/api\/link\/[^/]+\/click$/.test(pathname);
+}
+
+function isShortLinkRedirect(pathname: string) {
+  const match = /^\/([^/]+)$/.exec(pathname);
+  return !!match && !RESERVED_TOP_LEVEL_PATHS.has(match[1]);
 }
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  if (PUBLIC_PAGE_PATHS.has(pathname) || isPublicClickTracking(pathname, req.method)) {
+  if (
+    PUBLIC_PAGE_PATHS.has(pathname) ||
+    isPublicClickTracking(pathname, req.method) ||
+    isShortLinkRedirect(pathname)
+  ) {
     return NextResponse.next();
   }
 
