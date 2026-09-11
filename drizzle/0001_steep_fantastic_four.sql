@@ -1,0 +1,1 @@
+ALTER TABLE "link_clicks" ADD COLUMN "city" varchar(100);
