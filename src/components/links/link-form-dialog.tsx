@@ -8,7 +8,7 @@ import {
   createLinkSchema,
   updateLinkSchema,
   type Link,
-} from "@/lib/validations/link-shorted";
+} from "@/lib/models/link-shorted";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

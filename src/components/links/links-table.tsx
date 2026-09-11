@@ -5,7 +5,7 @@ import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChartLineIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
-import type { Link } from "@/lib/validations/link-shorted";
+import type { Link } from "@/lib/models/link-shorted";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

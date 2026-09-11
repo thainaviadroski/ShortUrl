@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { updateUserSchema } from "@/lib/validations/user";
+import { updateUserSchema } from "@/lib/models/user";
 import { UserRepository } from "@/repository/UserRepository";
 import { UserService } from "@/service/UserService";
 
