@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { db } from "@/db";
+import { getCurrentUserId } from "@/lib/session";
 import { AnalyticsRepository } from "@/repository/AnalyticsRepository";
 import { AnalyticsService } from "@/service/AnalyticsService";
 import { StatTile } from "@/components/analytics/stat-tile";
@@ -11,7 +13,10 @@ export const dynamic = "force-dynamic";
 const analyticsService = new AnalyticsService(new AnalyticsRepository(db));
 
 export default async function AnalyticsPage() {
-  const overview = await analyticsService.getOverview();
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/login");
+
+  const overview = await analyticsService.getOverview(userId);
 
   const topLink = overview.topLinks[0];
   const topBrowser = overview.breakdown.browser[0];
