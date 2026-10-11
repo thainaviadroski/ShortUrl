@@ -5,6 +5,7 @@ import {
   PencilSimpleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { db } from "@/db";
+import { getCurrentUserId } from "@/lib/session";
 import { LinkRepository } from "@/repository/LinkRepository";
 import { LinkService } from "@/service/LinkService";
 import { QrCodeService } from "@/service/QrCodeService";
@@ -44,7 +45,7 @@ export default async function LinkDetailPage({
   if (!userId) redirect("/login");
 
   const { id } = await params;
-  const link = await linkService.getLinkById(Number(id), userId);
+  const link = await linkService.getLinkById(Number(id));
 
   if (!link) notFound();
 
@@ -54,7 +55,7 @@ export default async function LinkDetailPage({
     ? Number(pageSizeParam)
     : PAGE_SIZE_OPTIONS[0];
 
-  const allClicks = (await linkClickService.listClicksByLink(link.id, userId)) ?? [];
+  const allClicks = await linkClickService.listClicksByLink(link.id);
   const totalPages = Math.max(1, Math.ceil(allClicks.length / pageSize));
   const start = (page - 1) * pageSize;
   const pageClicks = allClicks.slice(start, start + pageSize);
