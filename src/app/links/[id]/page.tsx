@@ -1,10 +1,11 @@
 import NextLink from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   CaretLeftIcon,
   PencilSimpleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { db } from "@/db";
+import { getCurrentUserId } from "@/lib/session";
 import { LinkRepository } from "@/repository/LinkRepository";
 import { LinkService } from "@/service/LinkService";
 import { QrCodeService } from "@/service/QrCodeService";
@@ -40,7 +41,10 @@ export default async function LinkDetailPage({
   searchParams,
 }: PageProps<"/links/[id]">) {
   const { id } = await params;
-  const link = await linkService.getLinkById(Number(id));
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/login");
+
+  const link = await linkService.getLinkById(Number(id), userId);
 
   if (!link) notFound();
 
@@ -50,7 +54,10 @@ export default async function LinkDetailPage({
     ? Number(pageSizeParam)
     : PAGE_SIZE_OPTIONS[0];
 
-  const allClicks = await linkClickService.listClicksByLink(link.id);
+  const allClicks = await linkClickService.listClicksByLink(link.id, userId);
+
+  if (!allClicks) notFound();
+
   const totalPages = Math.max(1, Math.ceil(allClicks.length / pageSize));
   const start = (page - 1) * pageSize;
   const pageClicks = allClicks.slice(start, start + pageSize);

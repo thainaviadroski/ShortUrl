@@ -1,5 +1,7 @@
 import { PlusIcon } from "@phosphor-icons/react/dist/ssr";
+import { redirect } from "next/navigation";
 import { db } from "@/db";
+import { getCurrentUserId } from "@/lib/session";
 import { LinkRepository } from "@/repository/LinkRepository";
 import { LinkService } from "@/service/LinkService";
 import { QrCodeService } from "@/service/QrCodeService";
@@ -20,7 +22,10 @@ export default async function LinksPage({ searchParams }: PageProps<"/links">) {
     ? Number(pageSizeParam)
     : PAGE_SIZE_OPTIONS[1];
 
-  const allLinks = await linkService.listLinks();
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/login");
+
+  const allLinks = await linkService.listLinks(userId);
   const totalPages = Math.max(1, Math.ceil(allLinks.length / pageSize));
   const start = (page - 1) * pageSize;
   const pageLinks = allLinks.slice(start, start + pageSize);
