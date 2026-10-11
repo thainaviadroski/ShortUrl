@@ -20,7 +20,7 @@ import {
 import { LinkFormDialog } from "@/components/links/link-form-dialog";
 import { FormattedDate } from "@/components/formatted-date";
 
-export function LinksTable({ links }: { links: Link[] }) {
+export function LinksTable({ links, baseUrl }: { links: Link[]; baseUrl: string }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -66,12 +66,12 @@ export function LinksTable({ links }: { links: Link[] }) {
             <TableCell className="font-medium">{link.id}</TableCell>
             <TableCell className="font-medium">
               <a
-                href={"https://ex.io/" + link.linkShort}
+                href={`${baseUrl}/${link.linkShort}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-300"
               >
-                {"https://ex.io/" + link.linkShort}
+                {`${baseUrl}/${link.linkShort}`}
               </a>
             </TableCell>
             <TableCell className="max-w-xs truncate" title={link.linkOriginal}>

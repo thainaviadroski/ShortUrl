@@ -12,7 +12,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@postgres:5432/${POSTGRES_DB:-shorturl}
       REDIS_URL: redis://redis:6379
-      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
     depends_on:
       postgres:
         condition: service_healthy

@@ -27,6 +27,7 @@ import { PaginationControl } from "@/components/pagination-control";
 import { PageSizeSelect } from "@/components/page-size-select";
 
 import { PAGE_SIZE_OPTIONS } from "@/lib/constratins";
+import { buildShortUrl } from "@/lib/base-url";
 
 const linkService = new LinkService(new LinkRepository(db), new QrCodeService());
 const linkClickService = new LinkClickService(
@@ -55,7 +56,7 @@ export default async function LinkDetailPage({
   const pageClicks = allClicks.slice(start, start + pageSize);
 
   const basePath = `/links/${link.id}`;
-  const shortUrl = `https://ex.io/${link.linkShort}`;
+  const shortUrl = buildShortUrl(link.linkShort);
 
   return (
     <div className="flex flex-col gap-6 p-6">

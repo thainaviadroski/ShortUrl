@@ -9,6 +9,7 @@ import { PaginationControl } from "@/components/pagination-control";
 import { PageSizeSelect } from "@/components/page-size-select";
 
 import { PAGE_SIZE_OPTIONS } from "@/lib/constratins";
+import { getBaseUrl } from "@/lib/base-url";
 
 const linkService = new LinkService(new LinkRepository(db), new QrCodeService());
 
@@ -38,7 +39,7 @@ export default async function LinksPage({ searchParams }: PageProps<"/links">) {
         />
       </div>
 
-      <LinksTable links={pageLinks} />
+      <LinksTable links={pageLinks} baseUrl={getBaseUrl()} />
 
       <div className="flex items-center justify-between">
         <PageSizeSelect
