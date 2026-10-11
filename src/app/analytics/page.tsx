@@ -6,6 +6,8 @@ import { RankedBarList } from "@/components/analytics/ranked-bar-list";
 import { ClicksTrendChart } from "@/components/analytics/clicks-trend-chart";
 import { formatCompactNumber } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 const analyticsService = new AnalyticsService(new AnalyticsRepository(db));
 
 export default async function AnalyticsPage() {
