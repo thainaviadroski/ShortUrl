@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS base
+FROM node:26-alpine AS base
 
 # 1. Instala dependências
 FROM base AS deps
