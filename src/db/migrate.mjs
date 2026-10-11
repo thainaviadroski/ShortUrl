@@ -11,6 +11,11 @@ if (!connectionString) {
   process.exit(1);
 }
 
+// Log the target (never the credentials) so a wrong DATABASE_URL, e.g. a
+// localhost value copied from .env, is obvious in the deploy logs.
+const { hostname, port, pathname } = new URL(connectionString);
+console.log(`Applying migrations to ${hostname}:${port || 5432}${pathname}`);
+
 const client = postgres(connectionString, { max: 1 });
 
 try {
