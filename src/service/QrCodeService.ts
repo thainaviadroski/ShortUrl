@@ -1,25 +1,23 @@
-import { mkdir } from "node:fs/promises";
-import path from "node:path";
 import QRCode from "qrcode";
 import { buildShortUrl } from "@/lib/base-url";
 
-const QR_CODE_DIR = path.join(process.cwd(), "public", "qrcodes");
 const QR_CODE_PUBLIC_PATH = "/qrcodes";
 
+// QR codes are rendered on request by src/app/qrcodes/[fileName]/route.ts
+// instead of being written to public/: in production Next only serves the
+// public/ files that existed at startup, and Railway wipes the container
+// filesystem on every deploy.
 export class QrCodeService {
 
     async generateForShortCode(linkShort: string) {
-        await mkdir(QR_CODE_DIR, { recursive: true });
+        return `${QR_CODE_PUBLIC_PATH}/${linkShort}.png`;
+    }
 
-        const fileName = `${linkShort}.png`;
-        const shortUrl = buildShortUrl(linkShort);
-
-        await QRCode.toFile(path.join(QR_CODE_DIR, fileName), shortUrl, {
+    async renderPng(linkShort: string) {
+        return await QRCode.toBuffer(buildShortUrl(linkShort), {
             width: 320,
             margin: 2,
         });
-
-        return `${QR_CODE_PUBLIC_PATH}/${fileName}`;
     }
 
 }

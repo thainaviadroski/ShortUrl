@@ -5,6 +5,7 @@ node_modules
 .env
 .env.local
 .env.*.local
+public/qrcodes
 npm-debug.log*
 Dockerfile
 docker-compose.yml
