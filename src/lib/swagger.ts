@@ -39,6 +39,7 @@ export function getApiDocs() {
               description: { type: "string", nullable: true },
               isActive: { type: "boolean" },
               qrCodeUrl: { type: "string", nullable: true },
+              createdBy: { type: "integer", description: "Id do usuário que criou o link" },
               created: { type: "string", format: "date-time" },
             },
           },

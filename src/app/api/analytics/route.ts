@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
+import { getCurrentUserId } from "@/lib/session";
 import { AnalyticsRepository } from "@/repository/AnalyticsRepository";
 import { AnalyticsService } from "@/service/AnalyticsService";
 
@@ -10,7 +11,7 @@ const analyticsService = new AnalyticsService(new AnalyticsRepository(db));
  * /api/analytics:
  *   get:
  *     tags: [Analytics]
- *     summary: Retorna um resumo de analytics de cliques
+ *     summary: Retorna um resumo de analytics dos links do usuário logado
  *     parameters:
  *       - name: days
  *         in: query
@@ -126,11 +127,17 @@ const analyticsService = new AnalyticsService(new AnalyticsRepository(db));
  *                             type: integer
  */
 export async function GET(request: NextRequest) {
+    const userId = await getCurrentUserId();
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const days = Number(request.nextUrl.searchParams.get("days") ?? 30);
     const months = Number(request.nextUrl.searchParams.get("months") ?? 12);
     const topLinksLimit = Number(request.nextUrl.searchParams.get("limit") ?? 5);
 
-    const overview = await analyticsService.getOverview({ days, months, topLinksLimit });
+    const overview = await analyticsService.getOverview(userId, { days, months, topLinksLimit });
 
     return NextResponse.json(overview);
 }

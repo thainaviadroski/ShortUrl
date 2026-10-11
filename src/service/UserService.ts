@@ -1,6 +1,7 @@
 import { users } from "@/db/schema";
 import { CreateUserInput, UpdateUserInput } from "@/lib/models/user";
 import { hashPassword } from "@/lib/password";
+import { LinkRepository } from "@/repository/LinkRepository";
 import { UserRepository } from "@/repository/UserRepository";
 
 type UserRow = typeof users.$inferSelect;
@@ -11,7 +12,10 @@ function toPublicUser({ passwordHash: _passwordHash, ...user }: UserRow) {
 
 export class UserService {
 
-    constructor(private repository: UserRepository) { }
+    constructor(
+        private repository: UserRepository,
+        private linkRepository: LinkRepository,
+    ) { }
 
     async listUsers() {
         const users = await this.repository.getAllUsers();
@@ -45,7 +49,9 @@ export class UserService {
         return updated ? toPublicUser(updated) : undefined;
     }
 
+    // A user's links (and their clicks) are removed together with the user.
     async deleteUser(id: number) {
+        await this.linkRepository.deleteLinksByUser(id);
         const deleted = await this.repository.deleteUser(id);
         return deleted ? toPublicUser(deleted) : undefined;
     }

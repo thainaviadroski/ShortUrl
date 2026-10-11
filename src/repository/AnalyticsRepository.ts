@@ -1,26 +1,35 @@
-import { desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { DbClient } from "@/db";
 import { linkClicks, linksShorted } from "@/db/schema";
+
+// Every query is scoped to the links created by `userId`; clicks are reached
+// through their link, so they are joined to links_shorted first.
+function ownedBy(userId: number) {
+    return eq(linksShorted.createdBy, userId);
+}
 
 export class AnalyticsRepository {
 
     constructor(private client: DbClient) { }
 
-    async getTotalClicks() {
+    async getTotalClicks(userId: number) {
         const [{ count }] = await this.client
             .select({ count: sql<number>`count(*)::int` })
-            .from(linkClicks);
+            .from(linkClicks)
+            .innerJoin(linksShorted, eq(linkClicks.linkId, linksShorted.id))
+            .where(ownedBy(userId));
         return count;
     }
 
-    async getTotalLinks() {
+    async getTotalLinks(userId: number) {
         const [{ count }] = await this.client
             .select({ count: sql<number>`count(*)::int` })
-            .from(linksShorted);
+            .from(linksShorted)
+            .where(ownedBy(userId));
         return count;
     }
 
-    async getClicksByDay(days: number) {
+    async getClicksByDay(userId: number, days: number) {
         const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
         return await this.client
@@ -29,12 +38,13 @@ export class AnalyticsRepository {
                 count: sql<number>`count(*)::int`.as("count"),
             })
             .from(linkClicks)
-            .where(gte(linkClicks.clickedAt, since))
+            .innerJoin(linksShorted, eq(linkClicks.linkId, linksShorted.id))
+            .where(and(ownedBy(userId), gte(linkClicks.clickedAt, since)))
             .groupBy(sql`date_trunc('day', ${linkClicks.clickedAt})`)
             .orderBy(sql`date_trunc('day', ${linkClicks.clickedAt})`);
     }
 
-    async getClicksByMonth(months: number) {
+    async getClicksByMonth(userId: number, months: number) {
         const since = new Date();
         since.setMonth(since.getMonth() - months);
 
@@ -44,12 +54,13 @@ export class AnalyticsRepository {
                 count: sql<number>`count(*)::int`.as("count"),
             })
             .from(linkClicks)
-            .where(gte(linkClicks.clickedAt, since))
+            .innerJoin(linksShorted, eq(linkClicks.linkId, linksShorted.id))
+            .where(and(ownedBy(userId), gte(linkClicks.clickedAt, since)))
             .groupBy(sql`date_trunc('month', ${linkClicks.clickedAt})`)
             .orderBy(sql`date_trunc('month', ${linkClicks.clickedAt})`);
     }
 
-    async getTopLinks(limit: number) {
+    async getTopLinks(userId: number, limit: number) {
         return await this.client
             .select({
                 linkId: linksShorted.id,
@@ -59,62 +70,73 @@ export class AnalyticsRepository {
             })
             .from(linksShorted)
             .leftJoin(linkClicks, eq(linkClicks.linkId, linksShorted.id))
+            .where(ownedBy(userId))
             .groupBy(linksShorted.id)
             .orderBy(desc(sql`count(${linkClicks.id})`))
             .limit(limit);
     }
 
-    async getBreakdownByBrowser() {
+    async getBreakdownByBrowser(userId: number) {
         return await this.client
             .select({
                 label: sql<string>`coalesce(${linkClicks.browser}, 'unknown')`.as("label"),
                 count: sql<number>`count(*)::int`.as("count"),
             })
             .from(linkClicks)
+            .innerJoin(linksShorted, eq(linkClicks.linkId, linksShorted.id))
+            .where(ownedBy(userId))
             .groupBy(linkClicks.browser)
             .orderBy(desc(sql`count(*)`));
     }
 
-    async getBreakdownByOs() {
+    async getBreakdownByOs(userId: number) {
         return await this.client
             .select({
                 label: sql<string>`coalesce(${linkClicks.os}, 'unknown')`.as("label"),
                 count: sql<number>`count(*)::int`.as("count"),
             })
             .from(linkClicks)
+            .innerJoin(linksShorted, eq(linkClicks.linkId, linksShorted.id))
+            .where(ownedBy(userId))
             .groupBy(linkClicks.os)
             .orderBy(desc(sql`count(*)`));
     }
 
-    async getBreakdownByDevice() {
+    async getBreakdownByDevice(userId: number) {
         return await this.client
             .select({
                 label: sql<string>`coalesce(${linkClicks.device}, 'unknown')`.as("label"),
                 count: sql<number>`count(*)::int`.as("count"),
             })
             .from(linkClicks)
+            .innerJoin(linksShorted, eq(linkClicks.linkId, linksShorted.id))
+            .where(ownedBy(userId))
             .groupBy(linkClicks.device)
             .orderBy(desc(sql`count(*)`));
     }
 
-    async getBreakdownByCountry() {
+    async getBreakdownByCountry(userId: number) {
         return await this.client
             .select({
                 label: sql<string>`coalesce(${linkClicks.country}, 'unknown')`.as("label"),
                 count: sql<number>`count(*)::int`.as("count"),
             })
             .from(linkClicks)
+            .innerJoin(linksShorted, eq(linkClicks.linkId, linksShorted.id))
+            .where(ownedBy(userId))
             .groupBy(linkClicks.country)
             .orderBy(desc(sql`count(*)`));
     }
 
-    async getTopCities(limit: number) {
+    async getTopCities(userId: number, limit: number) {
         return await this.client
             .select({
                 label: sql<string>`coalesce(${linkClicks.city}, 'Unknown') || coalesce(', ' || nullif(${linkClicks.country}, ''), '')`.as("label"),
                 count: sql<number>`count(*)::int`.as("count"),
             })
             .from(linkClicks)
+            .innerJoin(linksShorted, eq(linkClicks.linkId, linksShorted.id))
+            .where(ownedBy(userId))
             .groupBy(linkClicks.city, linkClicks.country)
             .orderBy(desc(sql`count(*)`))
             .limit(limit);

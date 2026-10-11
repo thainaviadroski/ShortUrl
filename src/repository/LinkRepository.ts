@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { DbClient } from "@/db";
 import { linksShorted } from "@/db/schema";
 import { redis } from "@/lib/redis";
@@ -8,7 +8,6 @@ type UpdateLink = Partial<NewLink>;
 type LinkRow = typeof linksShorted.$inferSelect;
 
 const CACHE_TTL_SECONDS = 200;
-const CACHE_KEY_ALL = "link:all";
 
 function cacheKeyById(id: number) {
     return `link:id:${id}`;
@@ -16,6 +15,10 @@ function cacheKeyById(id: number) {
 
 function cacheKeyByShortCode(linkShort: string) {
     return `link:short:${linkShort}`;
+}
+
+function cacheKeyByUser(userId: number) {
+    return `link:by-user:${userId}`;
 }
 
 function reviveDates(link: LinkRow): LinkRow {
@@ -31,8 +34,9 @@ export class LinkRepository {
 
     constructor(private client: DbClient) { }
 
-    async getAllLinks() {
-        const cached = await redis.get(CACHE_KEY_ALL);
+    async getLinksByUser(userId: number) {
+        const key = cacheKeyByUser(userId);
+        const cached = await redis.get(key);
 
         if (cached) {
             return (JSON.parse(cached) as LinkRow[]).map(reviveDates);
@@ -41,9 +45,10 @@ export class LinkRepository {
         const links = await this.client
             .select()
             .from(linksShorted)
+            .where(eq(linksShorted.createdBy, userId))
             .orderBy(desc(linksShorted.created), desc(linksShorted.id));
 
-        await redis.set(CACHE_KEY_ALL, JSON.stringify(links), "EX", CACHE_TTL_SECONDS);
+        await redis.set(key, JSON.stringify(links), "EX", CACHE_TTL_SECONDS);
 
         return links;
     }
@@ -90,17 +95,17 @@ export class LinkRepository {
         const [created] = await this.client.insert(linksShorted).values(data).returning();
 
         if (created) {
-            await redis.del(CACHE_KEY_ALL);
+            await redis.del(cacheKeyByUser(created.createdBy));
         }
 
         return created;
     }
 
-    async updateLink(id: number, data: UpdateLink) {
+    async updateLink(id: number, userId: number, data: UpdateLink) {
         const [updated] = await this.client
             .update(linksShorted)
             .set(data)
-            .where(eq(linksShorted.id, id))
+            .where(and(eq(linksShorted.id, id), eq(linksShorted.createdBy, userId)))
             .returning();
 
         if (updated) {
@@ -110,10 +115,10 @@ export class LinkRepository {
         return updated;
     }
 
-    async deleteLink(id: number) {
+    async deleteLink(id: number, userId: number) {
         const [deleted] = await this.client
             .delete(linksShorted)
-            .where(eq(linksShorted.id, id))
+            .where(and(eq(linksShorted.id, id), eq(linksShorted.createdBy, userId)))
             .returning();
 
         if (deleted) {
@@ -123,8 +128,26 @@ export class LinkRepository {
         return deleted;
     }
 
+    // The FK already cascades when a user is removed, but deleting the links
+    // here first lets their cached entries be dropped too; otherwise a cached
+    // short code would keep redirecting to a link that no longer exists.
+    async deleteLinksByUser(userId: number) {
+        const deleted = await this.client
+            .delete(linksShorted)
+            .where(eq(linksShorted.createdBy, userId))
+            .returning();
+
+        await Promise.all(deleted.map((link) => this.invalidateCache(link)));
+
+        return deleted;
+    }
+
     private async invalidateCache(link: LinkRow) {
-        await redis.del(cacheKeyById(link.id), cacheKeyByShortCode(link.linkShort), CACHE_KEY_ALL);
+        await redis.del(
+            cacheKeyById(link.id),
+            cacheKeyByShortCode(link.linkShort),
+            cacheKeyByUser(link.createdBy),
+        );
     }
 
 }

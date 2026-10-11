@@ -1,4 +1,5 @@
-import { boolean, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { users } from "./users";
 
 export const linksShorted = pgTable("links_shorted", {
   id: serial("id").primaryKey(),
@@ -8,5 +9,10 @@ export const linksShorted = pgTable("links_shorted", {
   description: text("description"),
   isActive: boolean("is_active").default(true).notNull(),
   qrCodeUrl: text("qr_code_url"),
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   created: timestamp("created").defaultNow().notNull(),
-});
+}, (table) => [
+  index("links_shorted_created_by_idx").on(table.createdBy),
+]);

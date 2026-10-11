@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { createLinkSchema } from "@/lib/models/link-shorted";
+import { getCurrentUserId } from "@/lib/session";
 import { LinkRepository } from "@/repository/LinkRepository";
 import { LinkService } from "@/service/LinkService";
 import { QrCodeService } from "@/service/QrCodeService";
@@ -45,7 +46,7 @@ const linkService = new LinkService(new LinkRepository(db), new QrCodeService())
  *         description: Dados inválidos
  *   get:
  *     tags: [Link]
- *     summary: Lista todos os links
+ *     summary: Lista os links criados pelo usuário logado
  *     responses:
  *       200:
  *         description: Lista de links
@@ -57,6 +58,12 @@ const linkService = new LinkService(new LinkRepository(db), new QrCodeService())
  *                 $ref: '#/components/schemas/Link'
  */
 export async function POST(request: NextRequest) {
+    const userId = await getCurrentUserId();
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const parsed = createLinkSchema.safeParse(body);
 
@@ -64,12 +71,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const created = await linkService.createLink(parsed.data);
+    const created = await linkService.createLink(parsed.data, userId);
 
     return NextResponse.json(created, { status: 201 });
 }
 
 export async function GET() {
-    const links = await linkService.listLinks();
+    const userId = await getCurrentUserId();
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const links = await linkService.listLinks(userId);
     return NextResponse.json(links);
 }

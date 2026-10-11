@@ -19,7 +19,14 @@ export class LinkClickService {
         private linkRepository: LinkRepository,
     ) { }
 
-    async listClicksByLink(linkId: number) {
+    // Returns undefined when the link doesn't exist or belongs to another user.
+    async listClicksByLink(linkId: number, userId: number) {
+        const link = await this.linkRepository.getLinkById(linkId);
+
+        if (link?.createdBy !== userId) {
+            return undefined;
+        }
+
         return await this.repository.getClicksByLinkId(linkId);
     }
 

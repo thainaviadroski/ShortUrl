@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { updateLinkSchema } from "@/lib/models/link-shorted";
+import { getCurrentUserId } from "@/lib/session";
 import { LinkRepository } from "@/repository/LinkRepository";
 import { LinkService } from "@/service/LinkService";
 import { QrCodeService } from "@/service/QrCodeService";
@@ -75,9 +76,17 @@ type RouteParams = { params: Promise<{ id: string }> };
  *       404:
  *         description: Link não encontrado
  */
+// Links created by another user answer 404, the same as a missing link, so
+// the API doesn't reveal which ids exist.
 export async function GET(_request: NextRequest, { params }: RouteParams) {
+    const userId = await getCurrentUserId();
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
-    const link = await linkService.getLinkById(Number(id));
+    const link = await linkService.getLinkById(Number(id), userId);
 
     if (!link) {
         return NextResponse.json({ error: "Link não encontrado" }, { status: 404 });
@@ -87,6 +96,12 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+    const userId = await getCurrentUserId();
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
     const parsed = updateLinkSchema.safeParse(body);
@@ -95,7 +110,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const updated = await linkService.updateLink(Number(id), parsed.data);
+    const updated = await linkService.updateLink(Number(id), userId, parsed.data);
 
     if (!updated) {
         return NextResponse.json({ error: "Link não encontrado" }, { status: 404 });
@@ -105,8 +120,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+    const userId = await getCurrentUserId();
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
-    const deleted = await linkService.deleteLink(Number(id));
+    const deleted = await linkService.deleteLink(Number(id), userId);
 
     if (!deleted) {
         return NextResponse.json({ error: "Link não encontrado" }, { status: 404 });

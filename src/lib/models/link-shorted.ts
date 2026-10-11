@@ -10,6 +10,7 @@ export const createLinkSchema = createInsertSchema(linksShorted, {
     id: true,
     created: true,
     qrCodeUrl: true,
+    createdBy: true,
   })
   .partial({
     linkShort: true,
@@ -23,6 +24,7 @@ export const updateLinkSchema = createUpdateSchema(linksShorted, {
   id: true,
   created: true,
   qrCodeUrl: true,
+  createdBy: true,
 });
 
 export const linkSchema = createSelectSchema(linksShorted);

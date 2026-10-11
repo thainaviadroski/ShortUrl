@@ -174,6 +174,9 @@ async function main() {
 
     console.log(`Created ${insertedUsers.length} users.`);
 
+    // Demo links belong to the Admin, so the other demo users start with an
+    // empty dashboard and show that each user only sees their own links.
+    const [admin] = insertedUsers;
     const insertedLinks = [];
 
     for (const link of DEMO_LINKS) {
@@ -188,6 +191,7 @@ async function main() {
                 isActive: link.isActive,
                 maxTimeValid: link.maxTimeValid,
                 qrCodeUrl,
+                createdBy: admin.id,
             })
             .returning();
 

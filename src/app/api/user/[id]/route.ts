@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { updateUserSchema } from "@/lib/models/user";
+import { LinkRepository } from "@/repository/LinkRepository";
 import { UserRepository } from "@/repository/UserRepository";
 import { UserService } from "@/service/UserService";
 
-const userService = new UserService(new UserRepository(db));
+const userService = new UserService(new UserRepository(db), new LinkRepository(db));
 
 type RouteParams = { params: Promise<{ id: string }> };
 

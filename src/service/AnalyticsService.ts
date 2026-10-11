@@ -11,7 +11,7 @@ export class AnalyticsService {
 
     constructor(private repository: AnalyticsRepository) { }
 
-    async getOverview({
+    async getOverview(userId: number, {
         days = 30,
         months = 12,
         topLinksLimit = 5,
@@ -29,16 +29,16 @@ export class AnalyticsService {
             device,
             country,
         ] = await Promise.all([
-            this.repository.getTotalClicks(),
-            this.repository.getTotalLinks(),
-            this.repository.getClicksByDay(days),
-            this.repository.getClicksByMonth(months),
-            this.repository.getTopLinks(topLinksLimit),
-            this.repository.getTopCities(topCitiesLimit),
-            this.repository.getBreakdownByBrowser(),
-            this.repository.getBreakdownByOs(),
-            this.repository.getBreakdownByDevice(),
-            this.repository.getBreakdownByCountry(),
+            this.repository.getTotalClicks(userId),
+            this.repository.getTotalLinks(userId),
+            this.repository.getClicksByDay(userId, days),
+            this.repository.getClicksByMonth(userId, months),
+            this.repository.getTopLinks(userId, topLinksLimit),
+            this.repository.getTopCities(userId, topCitiesLimit),
+            this.repository.getBreakdownByBrowser(userId),
+            this.repository.getBreakdownByOs(userId),
+            this.repository.getBreakdownByDevice(userId),
+            this.repository.getBreakdownByCountry(userId),
         ]);
 
         return {

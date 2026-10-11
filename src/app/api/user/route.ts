@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { createUserSchema } from "@/lib/models/user";
+import { LinkRepository } from "@/repository/LinkRepository";
 import { UserRepository } from "@/repository/UserRepository";
 import { UserService } from "@/service/UserService";
 
-const userService = new UserService(new UserRepository(db));
+const userService = new UserService(new UserRepository(db), new LinkRepository(db));
 
 /**
  * @swagger

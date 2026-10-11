@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
+import { getCurrentUserId } from "@/lib/session";
 import { LinkClickRepository } from "@/repository/LinkClickRepository";
 import { LinkRepository } from "@/repository/LinkRepository";
 import { LinkClickService } from "@/service/LinkClickService";
@@ -28,6 +29,8 @@ type RouteParams = { params: Promise<{ id: string }> };
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/LinkClick'
+ *       404:
+ *         description: Link não encontrado
  *   post:
  *     tags: [LinkClick]
  *     summary: Registra um clique em um link
@@ -45,8 +48,19 @@ type RouteParams = { params: Promise<{ id: string }> };
  *         description: Link não encontrado
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
+    const userId = await getCurrentUserId();
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
-    const clicks = await linkClickService.listClicksByLink(Number(id));
+    const clicks = await linkClickService.listClicksByLink(Number(id), userId);
+
+    if (!clicks) {
+        return NextResponse.json({ error: "Link não encontrado" }, { status: 404 });
+    }
+
     return NextResponse.json(clicks);
 }
 
