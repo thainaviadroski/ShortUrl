@@ -29,7 +29,6 @@ import { PageSizeSelect } from "@/components/page-size-select";
 
 import { PAGE_SIZE_OPTIONS } from "@/lib/constratins";
 import { buildShortUrl } from "@/lib/base-url";
-import { getCurrentUserId } from "@/lib/session";
 
 const linkService = new LinkService(new LinkRepository(db), new QrCodeService());
 const linkClickService = new LinkClickService(
@@ -45,7 +44,7 @@ export default async function LinkDetailPage({
   if (!userId) redirect("/login");
 
   const { id } = await params;
-  const link = await linkService.getLinkById(Number(id));
+  const link = await linkService.getLinkById(Number(id), userId);
 
   if (!link) notFound();
 
@@ -55,7 +54,7 @@ export default async function LinkDetailPage({
     ? Number(pageSizeParam)
     : PAGE_SIZE_OPTIONS[0];
 
-  const allClicks = await linkClickService.listClicksByLink(link.id);
+  const allClicks = (await linkClickService.listClicksByLink(link.id, userId)) ?? [];
   const totalPages = Math.max(1, Math.ceil(allClicks.length / pageSize));
   const start = (page - 1) * pageSize;
   const pageClicks = allClicks.slice(start, start + pageSize);
